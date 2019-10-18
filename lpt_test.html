@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="jquery-3.4.1.min.js"></script>
+        <script src="jquery.jqplot.min.js"></script>        
+
+        <link rel="stylesheet" type="text/css" href="jquery.jqplot.min.css" />
+
+        <script>
+            // function creates an http request to get MySQL data from local Node.js server
+            function getData() {
+                var xmlhttp = new XMLHttpRequest();
+                xmlhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        var res = xmlhttp.responseText;
+                        // parse JSON result
+                        var pdata = JSON.parse(res);
+                        // display the data
+                        displayData(pdata);
+                    }
+                };
+                xmlhttp.open("POST", "http://localhost:8080", true);
+                xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+                // parameter to differentiate request on server
+                xmlhttp.send("cmd=send");
+            }
+            
+            // function displays data using jqPlot
+            function displayData(data) {                
+                // counter to loop back to beginning of data
+                var counter = 0;                
+                
+                // 1 second interval to refresh data
+                var timer = setInterval(
+                function plot() {                    
+                    if (counter < Object.keys(data).length) {
+                        // actual jqPlot command with display options
+                        var plt = $.jqplot('plot', [data[counter.toString()].dpts], {
+                            axesDefaults: {
+                                pad: 0
+                            },
+                            axes: {                                
+                                yaxis: {
+                                    label: 'dBm',
+                                    min: -130.0,
+                                    max: -30.0,                                    
+                                }
+                            },
+                            grid: {
+                                background: '#000000'
+                            },
+                            seriesDefaults: {
+                                showMarker: false,
+                                color: '#ffff00'
+                            }
+                        }).replot();                        
+                        
+                        // display timestamp on graph
+                        var txt = $('<div style="color:#00ff00; position:absolute; text-align:center; height:100%; top:220px; width:100%">Trace Time: ' + data[counter.toString()].time + '</div>').insertAfter('.jqplot-grid-canvas');                        
+                        
+                        // update the counter after each blob
+                        counter++;
+                    } else {
+                        counter = 0;
+                    }
+                }, 1000);                
+            }
+            
+        </script>
+    </head>
+    <body>
+        <div>
+            <button id="btn" onclick="getData()">Start</button>
+        </div><br>
+        <div id="plot"></div>
+    </body>
+</html>
